@@ -5,7 +5,7 @@ import mammoth from "mammoth";
 import { PDFDocument } from "pdf-lib";
 import ExcelJS from "exceljs";
 import sharp from "sharp";
-import puppeteer from "puppeteer-core";
+import puppeteer from "puppeteer"; // ✅ تم التبديل هنا
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -16,12 +16,7 @@ import { BlobServiceClient } from "@azure/storage-blob";
 dotenv.config();
 console.log("✅ تم تحميل متغيرات البيئة");
 
-// ✅ مسار المتصفح في Azure Linux
-const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium";
-console.log("📍 مسار المتصفح:", executablePath);
-console.log("📁 هل المتصفح موجود؟", fs.existsSync(executablePath));
-
-// 🟦 Azure إعداد
+// 🟦 إعداد Azure
 const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 if (!AZURE_STORAGE_CONNECTION_STRING) {
   console.error("❌ لم يتم العثور على AZURE_STORAGE_CONNECTION_STRING");
@@ -33,7 +28,7 @@ const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_C
 const containerClient = blobServiceClient.getContainerClient(containerName);
 
 // 🟢 إعداد Express
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 8080;
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -88,7 +83,6 @@ app.post("/convert", upload.single("file"), async (req, res) => {
       const result = await mammoth.convertToHtml({ path: filePath });
 
       const browser = await puppeteer.launch({
-        executablePath,
         headless: true,
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });

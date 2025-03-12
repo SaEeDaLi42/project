@@ -17,6 +17,9 @@ import { BlobServiceClient } from "@azure/storage-blob";
 dotenv.config();
 console.log("✅ تم تحميل متغيرات البيئة");
 
+// ✅ تحقق من وجود Chromium
+console.log("📁 هل Chromium موجود؟", fs.existsSync("/usr/bin/chromium"));
+
 // 🟦 إعداد Azure
 const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 if (!AZURE_STORAGE_CONNECTION_STRING) {
@@ -91,11 +94,13 @@ app.post("/convert", upload.single("file"), async (req, res) => {
       const result = await mammoth.convertToHtml({ path: filePath });
 
       console.log("🚀 تشغيل متصفح puppeteer عبر chrome-aws-lambda...");
-      const browser = await puppeteer.launch({
-        args: chromium.args,
-        executablePath: await chromium.executablePath,
-        headless: chromium.headless,
-      });
+const browser = await puppeteer.launch({
+  args: chromium.args,
+  defaultViewport: chromium.defaultViewport,
+  executablePath: await chromium.executablePath,
+  headless: chromium.headless,
+});
+
 
       const page = await browser.newPage();
       await page.setContent(result.value);

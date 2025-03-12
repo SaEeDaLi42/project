@@ -93,14 +93,16 @@ app.post("/convert", upload.single("file"), async (req, res) => {
     if (requestedFormat === "pdf" && extension === ".docx") {
       const result = await mammoth.convertToHtml({ path: filePath });
 
-      console.log("🚀 تشغيل متصفح puppeteer عبر chrome-aws-lambda...");
-const browser = await puppeteer.launch({
-  args: chromium.args,
-  defaultViewport: chromium.defaultViewport,
-  executablePath: await chromium.executablePath,
-  headless: chromium.headless,
-});
-
+      const executablePath = await chromium.executablePath || '/usr/bin/chromium';
+      console.log("🧭 المسار التنفيذي:", executablePath);
+      
+      const browser = await puppeteer.launch({
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath,
+        headless: true,
+      });
+      
 
       const page = await browser.newPage();
       await page.setContent(result.value);

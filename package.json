@@ -1,5 +1,5 @@
 {
-  "name": "my-project",
+  "name": "project",
   "version": "1.0.0",
   "type": "module",
   "main": "server.js",

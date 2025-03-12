@@ -5,6 +5,7 @@ import mammoth from "mammoth";
 import { PDFDocument } from "pdf-lib";
 import ExcelJS from "exceljs";
 import sharp from "sharp";
+import chromium from "chrome-aws-lambda";
 import puppeteer from "puppeteer-core";
 import fs from "fs";
 import path from "path";
@@ -89,10 +90,11 @@ app.post("/convert", upload.single("file"), async (req, res) => {
     if (requestedFormat === "pdf" && extension === ".docx") {
       const result = await mammoth.convertToHtml({ path: filePath });
 
-      console.log("🚀 تشغيل متصفح puppeteer...");
+      console.log("🚀 تشغيل متصفح puppeteer عبر chrome-aws-lambda...");
       const browser = await puppeteer.launch({
-        headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        args: chromium.args,
+        executablePath: await chromium.executablePath,
+        headless: chromium.headless,
       });
 
       const page = await browser.newPage();

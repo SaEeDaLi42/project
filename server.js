@@ -5,7 +5,7 @@ import mammoth from "mammoth";
 import { PDFDocument } from "pdf-lib";
 import ExcelJS from "exceljs";
 import sharp from "sharp";
-import puppeteer from "puppeteer"; // ✅ تم التبديل هنا
+import puppeteer from "puppeteer-core";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -61,7 +61,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
     res.json({ success: true, message: "✅ تم رفع الملف بنجاح!", fileUrl });
   } catch (error) {
-    console.error("❌ خطأ أثناء رفع الملف:", error);
+    console.error("❌ خطأ أثناء رفع الملف:", error.stack);
     res.status(500).json({ success: false, message: "❌ فشل رفع الملف.", error: error.message });
   }
 });
@@ -79,9 +79,17 @@ app.post("/convert", upload.single("file"), async (req, res) => {
     const requestedFormat = req.body.format.toLowerCase();
     const convertedFilePath = path.join(os.tmpdir(), `converted_${Date.now()}.${requestedFormat}`);
 
+    console.log("📂 بدء التحويل:");
+    console.log("📎 الاسم:", fileName);
+    console.log("📄 الامتداد:", extension);
+    console.log("🎯 الصيغة المطلوبة:", requestedFormat);
+    console.log("📁 ملف مؤقت:", filePath);
+    console.log("📁 بعد التحويل:", convertedFilePath);
+
     if (requestedFormat === "pdf" && extension === ".docx") {
       const result = await mammoth.convertToHtml({ path: filePath });
 
+      console.log("🚀 تشغيل متصفح puppeteer...");
       const browser = await puppeteer.launch({
         headless: true,
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -91,15 +99,19 @@ app.post("/convert", upload.single("file"), async (req, res) => {
       await page.setContent(result.value);
       await page.pdf({ path: convertedFilePath, format: "A4" });
       await browser.close();
+      console.log("✅ تم إنشاء PDF بنجاح.");
     } else if ([".jpg", ".jpeg", ".png"].includes(extension) && requestedFormat === "webp") {
       await sharp(filePath).toFormat("webp").toFile(convertedFilePath);
+      console.log("✅ تم تحويل الصورة إلى WebP.");
     } else if (extension === ".xlsx" && requestedFormat === "csv") {
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.readFile(filePath);
       const worksheet = workbook.worksheets[0];
       const csvData = worksheet.getSheetValues().map(row => row?.join(",") || "").join("\n");
       fs.writeFileSync(convertedFilePath, csvData);
+      console.log("✅ تم تحويل Excel إلى CSV.");
     } else {
+      console.warn("⚠️ صيغة غير مدعومة:", extension, "->", requestedFormat);
       return res.status(400).json({ success: false, message: "❌ الصيغة غير مدعومة!" });
     }
 
@@ -114,10 +126,15 @@ app.post("/convert", upload.single("file"), async (req, res) => {
     fs.unlinkSync(convertedFilePath);
 
     const convertedFileUrl = convertedBlobClient.url;
+    console.log("☁️ تم رفع الملف المحول إلى Azure:", convertedFileUrl);
+
     res.json({ success: true, fileUrl: convertedFileUrl });
 
   } catch (error) {
-    console.error("❌ خطأ أثناء التحويل:", error.stack);
+    console.error("❌ خطأ أثناء التحويل!");
+    console.error("📛 الرسالة:", error.message);
+    console.error("🧱 التفاصيل:\n", error.stack);
+
     res.status(500).json({
       success: false,
       message: "❌ فشل التحويل.",

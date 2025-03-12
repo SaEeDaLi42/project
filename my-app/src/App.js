@@ -45,7 +45,7 @@ function App() {
 
     try {
       const response = await fetch(
-        "https://digital-library-backend.azurewebsites.net/convert",
+        "https://smartlib-convert-f8e2cpfnbrdfheh9.uaenorth-01.azurewebsites.net/convert",
         {
           method: "POST",
           body: formData,

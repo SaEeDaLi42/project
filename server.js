@@ -5,17 +5,29 @@ import mammoth from "mammoth";
 import { PDFDocument } from "pdf-lib";
 import ExcelJS from "exceljs";
 import sharp from "sharp";
-import puppeteer from "puppeteer-core"; // ✅ puppeteer-core فقط
+import puppeteer from "puppeteer-core";
 import fs from "fs";
 import path from "path";
 import os from "os";
 import dotenv from "dotenv";
 import { BlobServiceClient } from "@azure/storage-blob";
 
+// ✅ تحميل متغيرات البيئة
 dotenv.config();
+console.log("✅ تم تحميل متغيرات البيئة");
+
+// ✅ مسار المتصفح في Azure Linux
+const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium";
+console.log("📍 مسار المتصفح:", executablePath);
+console.log("📁 هل المتصفح موجود؟", fs.existsSync(executablePath));
 
 // 🟦 Azure إعداد
 const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+if (!AZURE_STORAGE_CONNECTION_STRING) {
+  console.error("❌ لم يتم العثور على AZURE_STORAGE_CONNECTION_STRING");
+  process.exit(1);
+}
+
 const containerName = "upload";
 const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
 const containerClient = blobServiceClient.getContainerClient(containerName);
@@ -27,7 +39,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// 📥 إعداد multer لرفع الملفات
+// 📥 إعداد multer
 const upload = multer({ dest: os.tmpdir() });
 
 // ✅ اختبار السيرفر
@@ -72,16 +84,13 @@ app.post("/convert", upload.single("file"), async (req, res) => {
     const requestedFormat = req.body.format.toLowerCase();
     const convertedFilePath = path.join(os.tmpdir(), `converted_${Date.now()}.${requestedFormat}`);
 
-    // ✅ استخدام مسار المتصفح في بيئة Linux (Azure Docker)
-    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium";
-
     if (requestedFormat === "pdf" && extension === ".docx") {
       const result = await mammoth.convertToHtml({ path: filePath });
 
       const browser = await puppeteer.launch({
         executablePath,
         headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"]
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });
 
       const page = await browser.newPage();

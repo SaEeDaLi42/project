@@ -5,8 +5,7 @@ import mammoth from "mammoth";
 import { PDFDocument } from "pdf-lib";
 import ExcelJS from "exceljs";
 import sharp from "sharp";
-import chromium from "chrome-aws-lambda";
-import puppeteer from "puppeteer-core";
+import puppeteer from "puppeteer";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -97,12 +96,10 @@ app.post("/convert", upload.single("file"), async (req, res) => {
       console.log("🧭 المسار التنفيذي:", executablePath);
       
       const browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath,
         headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
       });
-      
+            
 
       const page = await browser.newPage();
       await page.setContent(result.value);

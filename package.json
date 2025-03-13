@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "postinstall": "rm -rf node_modules/puppeteer-core node_modules/chrome-aws-lambda"
+  "postinstall": "puppeteer install"
   },
   "engines": {
     "node": ">=18"

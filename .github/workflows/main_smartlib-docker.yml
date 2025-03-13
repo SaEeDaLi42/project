@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy container app to Azure Web App - smartlib-docker
 
 on:
@@ -11,41 +8,36 @@ on:
 
 jobs:
   build:
-    runs-on: 'ubuntu-latest'
+    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Log in to registry
-      uses: docker/login-action@v2
-      with:
-        registry: https://smartlibregistry.azurecr.io/
-        username: ${{ secrets.AzureAppService_ContainerUsername_0d78adc8f671413b81c0394b4180ebf3 }}
-        password: ${{ secrets.AzureAppService_ContainerPassword_eba9b39b4cd9497f9fcf6543ad3c0d5a }}
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: smartlibregistry.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
-    - name: Build and push container image to registry
-      uses: docker/build-push-action@v3
-      with:
-        push: true
-        tags: smartlibregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_0d78adc8f671413b81c0394b4180ebf3 }}/smartlibregistry/smartlibregistry.azurecr.io/smartlib-app:${{ github.sha }}
-        file: ./Dockerfile
+      - name: Build and push container image to ACR
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: smartlibregistry.azurecr.io/smartlib-app:${{ github.sha }}
+          file: ./Dockerfile
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment:
-      name: 'production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-
     steps:
-    - name: Deploy to Azure Web App
-      id: deploy-to-webapp
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: 'smartlib-docker'
-        slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_165896679add4a0891423acdb9563829 }}
-        images: 'smartlibregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_0d78adc8f671413b81c0394b4180ebf3 }}/smartlibregistry/smartlibregistry.azurecr.io/smartlib-app:${{ github.sha }}'
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'smartlib-docker'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          images: 'smartlibregistry.azurecr.io/smartlib-app:${{ github.sha }}'

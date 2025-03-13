@@ -23,14 +23,14 @@ jobs:
       uses: docker/login-action@v2
       with:
         registry: https://smartlibregistry.azurecr.io/
-        username: ${{ secrets.AzureAppService_ContainerUsername_43cca5c8a08a44a6a4058560e6d22d08 }}
-        password: ${{ secrets.AzureAppService_ContainerPassword_b27a528db26a4a499cd8e6828b27d9a4 }}
+        username: ${{ secrets.AzureAppService_ContainerUsername_0d78adc8f671413b81c0394b4180ebf3 }}
+        password: ${{ secrets.AzureAppService_ContainerPassword_eba9b39b4cd9497f9fcf6543ad3c0d5a }}
 
     - name: Build and push container image to registry
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: smartlibregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_43cca5c8a08a44a6a4058560e6d22d08 }}/smartlibregistry/smartlibregistry.azurecr.io/smartlib-app:${{ github.sha }}
+        tags: smartlibregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_0d78adc8f671413b81c0394b4180ebf3 }}/smartlibregistry/smartlibregistry.azurecr.io/smartlib-app:${{ github.sha }}
         file: ./Dockerfile
 
   deploy:
@@ -47,5 +47,5 @@ jobs:
       with:
         app-name: 'smartlib-docker'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_d32b3f827bcf4bca96190bbe123db81a }}
-        images: 'smartlibregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_43cca5c8a08a44a6a4058560e6d22d08 }}/smartlibregistry/smartlibregistry.azurecr.io/smartlib-app:${{ github.sha }}'
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_165896679add4a0891423acdb9563829 }}
+        images: 'smartlibregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_0d78adc8f671413b81c0394b4180ebf3 }}/smartlibregistry/smartlibregistry.azurecr.io/smartlib-app:${{ github.sha }}'

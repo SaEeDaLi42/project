@@ -1,3 +1,6 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
 name: Build and deploy container app to Azure Web App - smartlib-docker
 
 on:
@@ -8,37 +11,41 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: 'ubuntu-latest'
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    - name: Log in to ACR
+    - name: Log in to registry
       uses: docker/login-action@v2
       with:
-        registry: smartlibregistry.azurecr.io
-        username: ${{ secrets.ACR_USERNAME }}
-        password: ${{ secrets.ACR_PASSWORD }}
+        registry: https://smartlibregistry.azurecr.io/
+        username: ${{ secrets.AzureAppService_ContainerUsername_248575cbd35548e9ba75e8b7691dd0b6 }}
+        password: ${{ secrets.AzureAppService_ContainerPassword_5c280cffd77b427babb0c031049e19f4 }}
 
-    - name: Build and push container image to ACR
+    - name: Build and push container image to registry
       uses: docker/build-push-action@v3
       with:
-        context: .
         push: true
-        tags: smartlibregistry.azurecr.io/smartlib-app:${{ github.sha }}
+        tags: smartlibregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_248575cbd35548e9ba75e8b7691dd0b6 }}/smartlibregistry.azurecr.io/smartlib-app:${{ github.sha }}
+        file: ./Dockerfile
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    environment:
+      name: 'production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
     - name: Deploy to Azure Web App
+      id: deploy-to-webapp
       uses: azure/webapps-deploy@v2
       with:
         app-name: 'smartlib-docker'
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        images: 'smartlibregistry.azurecr.io/smartlib-app:${{ github.sha }}'
+        slot-name: 'production'
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_d0e2e071bba2474ba4b2b0e561f8afb0 }}
+        images: 'smartlibregistry.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_248575cbd35548e9ba75e8b7691dd0b6 }}/smartlibregistry.azurecr.io/smartlib-app:${{ github.sha }}'

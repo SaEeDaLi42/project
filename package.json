@@ -2,9 +2,9 @@
   "name": "project",
   "version": "1.0.0",
   "type": "module",
-"main": "service/server.js",
+"main": "server.js",
   "scripts": {
-  "start": "node service/server.js",
+  "start": "node server.js",
 "postinstall": "rm -rf node_modules/puppeteer-core node_modules/chrome-aws-lambda"
   },
   "engines": {

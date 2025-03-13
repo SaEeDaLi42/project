@@ -1,40 +1,24 @@
-# استخدم نسخة خفيفة من Node.js
-FROM node:18-slim
+# استخدم صورة Node الرسمية
+FROM mcr.microsoft.com/playwright:v1.43.1-jammy
 
-# تثبيت Chromium ومتطلباته لتشغيل Puppeteer
-RUN apt-get update && apt-get install -y \
-  chromium \
-  fonts-liberation \
-  libappindicator3-1 \
-  libasound2 \
-  libatk-bridge2.0-0 \
-  libatk1.0-0 \
-  libcups2 \
-  libdbus-1-3 \
-  libgdk-pixbuf2.0-0 \
-  libnspr4 \
-  libnss3 \
-  libx11-xcb1 \
-  libxcomposite1 \
-  libxdamage1 \
-  libxrandr2 \
-  xdg-utils \
-  wget \
-  --no-install-recommends && \
-  apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# إعداد مجلد المشروع
+# تحديد مجلد العمل
 WORKDIR /app
+
+# نسخ ملفات المشروع إلى الحاوية
 COPY . .
 
-# تثبيت الباكجات
+# تثبيت الحزم
 RUN npm install
 
-# متغير البيئة لمسار Chrome
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+# إزالة puppeteer-core كما في postinstall (احتياطي)
+RUN rm -rf node_modules/puppeteer-core node_modules/chrome-aws-lambda
 
-# فتح منفذ التطبيق
+# تعيين المتغيرات اللازمة
+ENV NODE_ENV=production
+ENV PORT=8080
+
+# فتح المنفذ
 EXPOSE 8080
 
 # أمر التشغيل
-CMD ["node", "server.js"]
+CMD [ "node", "server.js" ]

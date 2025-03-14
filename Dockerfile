@@ -1,25 +1,20 @@
-# استخدم صورة Node الرسمية
+# استخدم Node الرسمي
 FROM mcr.microsoft.com/playwright:v1.43.1-jammy
 
-# تحديد مجلد العمل
+# إعداد مجلد العمل
 WORKDIR /app
 
-# نسخ ملفات المشروع إلى الحاوية
+# نسخ ملفات البروجكت
+COPY package*.json ./
 COPY . .
 
 # تثبيت الحزم
 RUN npm install
 
+# تثبيت المتصفحات الخاصة بـ Playwright (لو لم تكن موجودة في base image)
 RUN npx playwright install --with-deps
 
-# إزالة puppeteer-core كما في postinstall (احتياطي)
-RUN rm -rf node_modules/puppeteer-core node_modules/chrome-aws-lambda
-
-# تعيين المتغيرات اللازمة
-ENV NODE_ENV=production
-ENV PORT=8080
-
-# فتح المنفذ
+# تحديد المنفذ
 EXPOSE 8080
 
 # أمر التشغيل

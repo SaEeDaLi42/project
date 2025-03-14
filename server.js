@@ -17,7 +17,7 @@ dotenv.config();
 console.log("✅ تم تحميل متغيرات البيئة");
 
 // التحقق من وجود Chromium
-console.log("📁 هل Chromium موجود؟", fs.existsSync("/home/site/wwwroot/node_modules/playwright/.local-browsers"));
+console.log("📁 التحقق من Playwright: محاولة تشغيل المتصفح سيتم لاحقًا");
 
 // إعداد Azure Blob Storage
 const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;

@@ -153,6 +153,9 @@ app.get("/convert", (req, res) => {
   res.status(400).json({ success: false, message: "❌ استخدم POST بدل GET" });
 });
 
+
+console.log("🟢 جاهز لتشغيل الخادم...");
+
 // بدء الخادم
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 الخادم يعمل على http://localhost:${PORT}`);

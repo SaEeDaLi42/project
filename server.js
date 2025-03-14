@@ -92,10 +92,10 @@ app.post("/convert", upload.single("file"), async (req, res) => {
       const result = await mammoth.convertToHtml({ path: filePath });
 
       const browser = await chromium.launch({
+        args: ['--no-sandbox'],
         headless: true,
-        args: ['--no-sandbox', '--disable-dev-shm-usage'],
       });
-
+      
       const page = await browser.newPage();
       await page.setContent(result.value);
       await page.pdf({ path: convertedFilePath, format: "A4" });

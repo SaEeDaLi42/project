@@ -10,6 +10,8 @@ COPY . .
 # تثبيت الحزم
 RUN npm install
 
+RUN npx playwright install --with-deps
+
 # إزالة puppeteer-core كما في postinstall (احتياطي)
 RUN rm -rf node_modules/puppeteer-core node_modules/chrome-aws-lambda
 

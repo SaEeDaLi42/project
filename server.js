@@ -1,23 +1,19 @@
 import express from "express";
 import cors from "cors";
 import multer from "multer";
-import mammoth from "mammoth";
-import { PDFDocument } from "pdf-lib";
-import ExcelJS from "exceljs";
-import sharp from "sharp";
-import { chromium } from 'playwright';
 import fs from "fs";
 import path from "path";
 import os from "os";
 import dotenv from "dotenv";
+import { spawnSync } from "child_process";
+import ExcelJS from "exceljs";
+import sharp from "sharp";
 import { BlobServiceClient } from "@azure/storage-blob";
+import { DocumentAnalysisClient, AzureKeyCredential } from "@azure/ai-form-recognizer"; // ✅ NEW
 
 // تحميل متغيرات البيئة
 dotenv.config();
 console.log("✅ تم تحميل متغيرات البيئة");
-
-// التحقق من وجود Chromium
-console.log("📁 التحقق من Playwright: محاولة تشغيل المتصفح سيتم لاحقًا");
 
 // إعداد Azure Blob Storage
 const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
@@ -25,9 +21,19 @@ if (!AZURE_STORAGE_CONNECTION_STRING) {
   console.error("❌ لم يتم العثور على AZURE_STORAGE_CONNECTION_STRING");
   process.exit(1);
 }
-const containerName = "upload";
+const containerName = "uploads";
 const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
 const containerClient = blobServiceClient.getContainerClient(containerName);
+
+// إعداد Azure Document Intelligence
+const DOC_AI_ENDPOINT = process.env.DOC_AI_ENDPOINT;
+const DOC_AI_KEY = process.env.DOC_AI_KEY;
+let documentClient;
+if (DOC_AI_ENDPOINT && DOC_AI_KEY) {
+  documentClient = new DocumentAnalysisClient(DOC_AI_ENDPOINT, new AzureKeyCredential(DOC_AI_KEY));
+} else {
+  console.warn("⚠️ لم يتم تهيئة Azure Document Intelligence. سيتم تجاهل التحليل الذكي.");
+}
 
 // إعداد Express
 const PORT = process.env.PORT || 8080;
@@ -68,6 +74,26 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   }
 });
 
+// تحليل المستندات باستخدام Document Intelligence
+app.post("/analyze", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, message: "❌ لم يتم رفع ملف!" });
+    if (!documentClient) return res.status(500).json({ success: false, message: "⚠️ خدمة تحليل المستندات غير مفعلة." });
+
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const poller = await documentClient.beginAnalyzeDocument("prebuilt-read", fileBuffer);
+    const result = await poller.pollUntilDone();
+
+    const extractedText = result?.content || "";
+    fs.unlinkSync(req.file.path);
+
+    res.json({ success: true, content: extractedText });
+  } catch (error) {
+    console.error("❌ خطأ أثناء تحليل المستند:", error);
+    res.status(500).json({ success: false, message: "❌ فشل تحليل المستند.", error: error.message });
+  }
+});
+
 // تحويل الملفات
 app.post("/convert", upload.single("file"), async (req, res) => {
   try {
@@ -89,19 +115,20 @@ app.post("/convert", upload.single("file"), async (req, res) => {
     console.log("📁 بعد التحويل:", convertedFilePath);
 
     if (requestedFormat === "pdf" && extension === ".docx") {
-      const result = await mammoth.convertToHtml({ path: filePath });
+      const result = spawnSync("libreoffice", [
+        "--headless",
+        "--convert-to", "pdf",
+        "--outdir", path.dirname(convertedFilePath),
+        filePath,
+      ]);
 
-      const browser = await chromium.launch({
-        args: ['--no-sandbox'],
-        headless: true,
-      });
-      
-      const page = await browser.newPage();
-      await page.setContent(result.value);
-      await page.pdf({ path: convertedFilePath, format: "A4" });
-      await browser.close();
+      if (result.error) throw result.error;
 
-      console.log("✅ تم إنشاء PDF بنجاح.");
+      const outputFileName = path.basename(filePath, path.extname(filePath)) + ".pdf";
+      const convertedFullPath = path.join(path.dirname(convertedFilePath), outputFileName);
+      fs.renameSync(convertedFullPath, convertedFilePath);
+
+      console.log("✅ تم التحويل باستخدام LibreOffice");
 
     } else if ([".jpg", ".jpeg", ".png"].includes(extension) && requestedFormat === "webp") {
       await sharp(filePath).toFormat("webp").toFile(convertedFilePath);
@@ -152,7 +179,6 @@ app.post("/convert", upload.single("file"), async (req, res) => {
 app.get("/convert", (req, res) => {
   res.status(400).json({ success: false, message: "❌ استخدم POST بدل GET" });
 });
-
 
 console.log("🟢 جاهز لتشغيل الخادم...");
 

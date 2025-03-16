@@ -11,6 +11,8 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
+import FileUpload from "./components/FileUpload";
+import ResultDisplay from "./components/ResultDisplay";
 
 function App() {
   const [file, setFile] = useState(null);
@@ -44,13 +46,10 @@ function App() {
     formData.append("format", format);
 
     try {
-      const response = await fetch(
-        "https://smartlib-convert-f8e2cpfnbrdfheh9.uaenorth-01.azurewebsites.net/convert",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response = await fetch("http://localhost:8080/convert", {
+        method: "POST",
+        body: formData,
+      });
 
       if (!response.ok) {
         throw new Error(`الخادم رد بحالة ${response.status}`);
@@ -72,71 +71,60 @@ function App() {
   };
 
   return (
-    <Container maxWidth="sm" style={{ marginTop: "50px", textAlign: "center" }}>
-      <Paper elevation={3} style={{ padding: "30px", borderRadius: "10px" }}>
-        <Typography variant="h4" gutterBottom>
-          🔄 محول المستندات
-        </Typography>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-6">
+      <h1 className="text-3xl font-bold text-blue-600 mb-6">📄 محول المستندات الذكي</h1>
+      <Container maxWidth="sm" style={{ textAlign: "center" }}>
+        <Paper elevation={3} style={{ padding: "30px", borderRadius: "10px" }}>
+          {error && (
+            <Alert severity="error" style={{ marginBottom: "15px" }}>
+              {error}
+            </Alert>
+          )}
 
-        {error && (
-          <Alert severity="error" style={{ marginBottom: "15px" }}>
-            {error}
-          </Alert>
-        )}
+          <Box display="flex" flexDirection="column" gap="15px">
+            <TextField
+              variant="outlined"
+              value={fileName}
+              placeholder="📂 اختر ملف..."
+              disabled
+              fullWidth
+            />
+            <Button variant="contained" component="label">
+              📂 استعراض
+              <input type="file" hidden onChange={handleFileChange} />
+            </Button>
+          </Box>
 
-        <Box display="flex" flexDirection="column" gap="15px">
-          <TextField
-            variant="outlined"
-            value={fileName}
-            placeholder="📂 اختر ملف..."
-            disabled
+          <Typography variant="h6" style={{ marginTop: "20px" }}>
+            🔄 اختر الصيغة:
+          </Typography>
+          <Select
+            value={format}
+            onChange={(e) => setFormat(e.target.value)}
             fullWidth
-          />
-          <Button variant="contained" component="label">
-            📂 استعراض
-            <input type="file" hidden onChange={handleFileChange} />
-          </Button>
-        </Box>
-
-        <Typography variant="h6" style={{ marginTop: "20px" }}>
-          🔄 اختر الصيغة:
-        </Typography>
-        <Select
-          value={format}
-          onChange={(e) => setFormat(e.target.value)}
-          fullWidth
-        >
-          <MenuItem value="pdf">📄 PDF</MenuItem>
-          <MenuItem value="csv">📊 CSV</MenuItem>
-          <MenuItem value="webp">🖼️ WEBP</MenuItem>
-        </Select>
-
-        {file && (
-          <Button
-            variant="contained"
-            color="success"
-            onClick={handleConvert}
-            fullWidth
-            style={{ marginTop: "10px" }}
-            disabled={loading}
           >
-            {loading ? <CircularProgress size={24} /> : "🔄 تحويل"}
-          </Button>
-        )}
+            <MenuItem value="pdf">📄 PDF</MenuItem>
+            <MenuItem value="csv">📊 CSV</MenuItem>
+            <MenuItem value="webp">🖼️ WEBP</MenuItem>
+          </Select>
 
-        {convertedFileUrl && (
-          <Button
-            variant="contained"
-            color="info"
-            onClick={() => window.open(convertedFileUrl, "_blank")}
-            fullWidth
-            style={{ marginTop: "10px" }}
-          >
-            ⬇️ تحميل الملف المحوّل
-          </Button>
-        )}
-      </Paper>
-    </Container>
+          {file && (
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleConvert}
+              fullWidth
+              style={{ marginTop: "10px" }}
+              disabled={loading}
+            >
+              {loading ? <CircularProgress size={24} /> : "🔄 تحويل"}
+            </Button>
+          )}
+
+          {convertedFileUrl && <ResultDisplay result={convertedFileUrl} />}
+        </Paper>
+      </Container>
+    </div>
   );
 }
 

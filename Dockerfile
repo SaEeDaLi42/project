@@ -8,6 +8,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY . .
 
+RUN apt-get update && apt-get install -y libreoffice
+
 # تثبيت الحزم
 RUN npm install
 
